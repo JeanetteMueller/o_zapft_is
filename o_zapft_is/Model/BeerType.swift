@@ -12,7 +12,6 @@ import SwiftData
 class BeerType: NSObject, Decodable {
     @Attribute(.unique) var id: Int
     var name: String
-    //    var tagline: String?
     var desc: String?
     var imageUrl: String?
     
@@ -31,8 +30,17 @@ class BeerType: NSObject, Decodable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, name, desc = "description", imageUrl = "image_url", abv, ibu, ebc, srm, ph, ingredients, foodPairing = "food_pairing"
-        
+        case id, 
+             name,
+             desc = "description",
+             imageUrl = "image_url", 
+             abv, 
+             ibu,
+             ebc,
+             srm,
+             ph,
+             ingredients,
+             foodPairing = "food_pairing"
     }
     
     required init(from decoder: Decoder) throws {

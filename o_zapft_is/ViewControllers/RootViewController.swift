@@ -25,8 +25,6 @@ class RootViewController: UIViewController, Storyboarded {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Do any additional setup after loading the view.
-        
         self.titleView.layer.cornerRadius = 10
         
         initMotion()
@@ -39,11 +37,9 @@ class RootViewController: UIViewController, Storyboarded {
         super.viewDidDisappear(animated)
     }
     
-    
-    
     func initMotion() {
         
-        guard manager.isAccelerometerAvailable else {
+        guard manager.isDeviceMotionAvailable else {
             return
         }
         
@@ -57,7 +53,5 @@ class RootViewController: UIViewController, Storyboarded {
             self.backgroundImage.transform = CGAffineTransform(rotationAngle: CGFloat(rotation))
         }
     }
-
-
 }
 

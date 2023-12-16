@@ -28,7 +28,6 @@ class StorageManager {
     
     var beer: [BeerType]
     
-    
     func getAllBeer() -> [BeerType] {
         return self.beer
     }
@@ -45,9 +44,7 @@ class StorageManager {
     func updateFromDownload() {
         DispatchQueue.global(qos: .background).async {
             
-            var targetPath = Networker.getUrlSessionDownloadFolderPath()
-            targetPath.append("/")
-            targetPath.append("beers")
+            let targetPath = Networker.getLocalPathFor(apiEndPoint)
             
             if FileManager.default.fileExists(atPath: targetPath) {
                 
@@ -59,13 +56,11 @@ class StorageManager {
                     let result = try jsonDecoder.decode([BeerType].self, from: jsonData)
                     
                     DispatchQueue.main.async {
-                        StorageManager.shared.beer = result
-                        
+                        self.beer = result
                         
                         NotificationCenter.default.post(name: .StorageManagerDidChange, object: nil)
-                        
-                        
                     }
+                    
                 }catch {
                     print("ERROR: \(error.localizedDescription)")
                 }

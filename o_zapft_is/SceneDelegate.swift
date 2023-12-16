@@ -66,21 +66,27 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Called when the scene has moved from an inactive state to an active state.
         // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
         
-        if let url = URL(string: "https://api.punkapi.com/v2/beers") {
-            _ = self.networker.performDownloadTask(url, withDescription: "Download all beers")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             
-            NotificationCenter.default
-                .publisher(for: .NetworkerTransferDidFinished)
-                .sink { notification in
-                    
-                    StorageManager.shared.updateFromDownload()
-                    
-                }
-                .store(in: &cancellables)
-            
+            if let url = URL(string: apiEndPoint) {
+                _ = self.networker.performDownloadTask(url, withDescription: "Download all beers")
+                
+                NotificationCenter.default
+                    .publisher(for: .NetworkerTransferDidFinished)
+                    .sink { notification in
+                        
+                        if let task = notification.object as? URLSessionDownloadTask {
+                            if let requestUrl = task.originalRequest?.url, requestUrl == url {
+                                
+                                StorageManager.shared.updateFromDownload()
+                            }
+                        }
+                    }
+                    .store(in: &self.cancellables)
+                
+            }
         }
     }
-    
     
     func sceneWillResignActive(_ scene: UIScene) {
         // Called when the scene will move from an active state to an inactive state.

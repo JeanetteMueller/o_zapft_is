@@ -14,10 +14,7 @@ class RootCoordinator: Coordinator {
     init(_ navigationController: UINavigationController) {
         self.navigationController = navigationController
         
-        
     }
-    
-    
     
     func start() {
         let vc = RootViewController.instantiate()

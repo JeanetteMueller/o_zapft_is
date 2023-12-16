@@ -7,7 +7,7 @@
 
 import Foundation
 import Combine
-
+import CryptoKit
 
 extension Notification.Name {
     static let NetworkerTransferDidStart            = Notification.Name("NetworkerTransferDidStart")
@@ -18,29 +18,12 @@ extension Notification.Name {
     static let NetworkerTransferNeedsCredentials    = Notification.Name("NetworkerTransferNeedsCredentials")
 }
 
+let apiEndPoint = "https://api.punkapi.com/v2/beers"
+
 class Networker: NSObject {
     
     var runningTasks = [URLSessionTask]()
     var taskToResume: URLSessionTask?
-    
-    let transferDidStartPublisher = NotificationCenter.Publisher(center: .default, name: .NetworkerTransferDidStart, object: nil)
-    
-    
-    lazy var urlSession: URLSession = {
-        let configuration = URLSessionConfiguration.default
-        
-        configuration.isDiscretionary = true
-        configuration.sessionSendsLaunchEvents = true
-        
-        configuration.urlCache = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        
-        //        var defaultHeaders = [AnyHashable: Any]()
-        //        defaultHeaders["User-Agent"] = UserAgentHelper.userAgent()
-        //        configuration.httpAdditionalHeaders = defaultHeaders
-        
-        return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-    }()
     
     lazy var backgroundUrlSession: URLSession = {
         let configuration = URLSessionConfiguration.background(withIdentifier: "de.themaverick.o-zapft-is")
@@ -51,11 +34,14 @@ class Networker: NSObject {
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         
-//        var defaultHeaders = [AnyHashable: Any]()
-//        defaultHeaders["User-Agent"] = UserAgentHelper.userAgent()
-//        configuration.httpAdditionalHeaders = defaultHeaders
-        
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+    }()
+    
+    static let shared: Networker = {
+        
+        let instance = Networker()
+        
+        return instance
     }()
     
     func performDownloadTask(_ url: URL, withDescription desc: String) -> URLSessionDownloadTask {
@@ -82,7 +68,7 @@ class Networker: NSObject {
         return task
     }
     
-    static func getBaseDirectory() -> String {
+    static func getCacheDirectory() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory = paths[0] as String
         
@@ -90,7 +76,7 @@ class Networker: NSObject {
     }
     
     static func getUrlSessionDownloadFolderPath() -> String {
-        let documentsDirectory = Networker.getBaseDirectory()
+        let documentsDirectory = Networker.getCacheDirectory()
         
         let path = documentsDirectory.appending("/downloads")
         
@@ -100,6 +86,19 @@ class Networker: NSObject {
             
         }
         return path
+    }
+    
+    static func getLocalPathFor(_ string: String) -> String {
+        
+        var targetPath = Networker.getUrlSessionDownloadFolderPath()
+        targetPath.append("/")
+        
+        let inputData = Data(string.utf8)
+        let hash = SHA256.hash(data: inputData)
+                        
+        targetPath.append("\(hash)")
+        
+        return targetPath
     }
 }
 
@@ -139,9 +138,7 @@ extension Networker: URLSessionDownloadDelegate {
         
         if let url = downloadTask.originalRequest?.url {
             
-            var targetPath = Networker.getUrlSessionDownloadFolderPath()
-            targetPath.append("/")
-            targetPath.append("beers")
+            let targetPath = Networker.getLocalPathFor(url.absoluteString)
             
             try? FileManager.default.removeItem(atPath: targetPath) //remove old file
             

@@ -14,7 +14,6 @@ protocol Coordinator: AnyObject{
     func start()
     
     func popViewController(animated: Bool, useCustomAnimation: Bool, transitionType: CATransitionType)
-
 }
 
 extension Coordinator {

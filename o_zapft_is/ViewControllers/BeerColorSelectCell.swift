@@ -49,8 +49,6 @@ class BeerColorSelectCell: UICollectionViewCell {
         self.gradientContainer.layer.insertSublayer(gradient, at: 0)
     }
     
-    
-    
     @objc func gestureChangedPan(_ gesture: UIPanGestureRecognizer) {
         switch gesture.state {
                 
@@ -65,6 +63,7 @@ class BeerColorSelectCell: UICollectionViewCell {
                 break
         }
     }
+    
     @objc func gestureChangedTap(_ gesture: UITapGestureRecognizer) {
         switch gesture.state {
                 

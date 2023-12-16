@@ -9,7 +9,7 @@ import UIKit
 
 class BeerDetailImageCell: UITableViewCell {
     
-    @IBOutlet var largeImageView: UIImageView!
+    @IBOutlet var largeImageView: UIImageViewWithNetworker!
 }
 class BeerDetailDetailCell: UITableViewCell {
     
@@ -46,6 +46,7 @@ class BeerDetailVC: UITableViewController, Storyboarded {
     override func numberOfSections(in tableView: UITableView) -> Int {
         return self.content.count
     }
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         self.content[section].count
     }
@@ -65,16 +66,7 @@ class BeerDetailVC: UITableViewController, Storyboarded {
                     let cell = tableView.dequeueReusableCell(withIdentifier: "BeerDetailImageCell", for: indexPath) as! BeerDetailImageCell
                     
                     if let imageUrlPath = currentBeer.imageUrl, let imageUrl = URL(string: imageUrlPath) {
-                        DispatchQueue.global(qos: .background).async {
-                            
-                            let image = UIImage(data: try! Data(contentsOf: imageUrl))
-                            
-                            DispatchQueue.main.async {
-                                cell.largeImageView.image = image
-                            }
-                            
-                        }
-                        
+                        cell.largeImageView.showImage(from: imageUrl)
                     }
                     
                     return cell

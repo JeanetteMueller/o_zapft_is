@@ -6,11 +6,11 @@
 //
 
 import UIKit
-
-
+import Combine
 
 class BeerListVC: UICollectionViewController, Storyboarded {
     weak var coordinator: RootCoordinator?
+    var cancellables: Set<AnyCancellable> = []
     
     var beers = [BeerType]()
     
@@ -21,32 +21,21 @@ class BeerListVC: UICollectionViewController, Storyboarded {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.collectionView.delegate = self
-        
-        
+        NotificationCenter.default
+            .publisher(for: .StorageManagerDidChange)
+            .sink { notification in
+                
+                self.beers = StorageManager.shared.getAllBeer()
+                
+                self.collectionView.reloadData()
+                
+            }
+            .store(in: &cancellables)
     }
-    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(self.notificationStorageManagerDidChange(_:)),
-                                               name: .StorageManagerDidChange,
-                                               object: nil)
-    }
-    
-    @objc func notificationStorageManagerDidChange(_ notification: Notification) {
         
-        self.beers = StorageManager.shared.getAllBeer()
-        
-        self.collectionView.reloadData()
-    }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        
-        NotificationCenter.default.removeObserver(self)
-        
-        super.viewDidDisappear(animated)
     }
     
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -62,24 +51,22 @@ class BeerListVC: UICollectionViewController, Storyboarded {
         return self.beers.count
     }
     
-    
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "BeerListHeaderView", for: indexPath) as! BeerListHeaderView
         
         switch indexPath.section {
             case SectionTypes.colorSelect.rawValue:
-                view.titleLabel.text = "Destil by color"
+                view.titleLabel.text = "Destil by color".localized
             case SectionTypes.beers.rawValue:
-                view.titleLabel.text = "Select your beer"
+                view.titleLabel.text = "Select your beer".localized
             default:
                 view.titleLabel.text = "–"
         }
         
-            
         return view
-        
     }
+    
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         if indexPath.section == SectionTypes.colorSelect.rawValue {
@@ -88,8 +75,6 @@ class BeerListVC: UICollectionViewController, Storyboarded {
             cell.delegate = self
             
             return cell
-            
-            
         }
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "BeerCell", for: indexPath) as! BeerCell
@@ -101,18 +86,6 @@ class BeerListVC: UICollectionViewController, Storyboarded {
         cell.titleLabel.text = beer.name
         cell.imageView.image = nil
         
-        if let imageUrlPath = beer.imageUrl, let imageUrl = URL(string: imageUrlPath) {
-            DispatchQueue.global(qos: .background).async {
-                
-                let image = UIImage(data: try! Data(contentsOf: imageUrl))
-                
-                DispatchQueue.main.async {
-                    cell.imageView.image = image
-                }
-                
-            }
-            
-        }
         cell.clipsToBounds = true
         
         return cell
@@ -131,6 +104,16 @@ class BeerListVC: UICollectionViewController, Storyboarded {
         
         if let colorCell = cell as? BeerColorSelectCell {
             colorCell.updateGradient()
+        }
+        
+        if let beerCell = cell as? BeerCell {
+            
+            let beer = self.beers[indexPath.item]
+            
+            if let imageUrlPath = beer.imageUrl, let imageUrl = URL(string: imageUrlPath) {
+                
+                beerCell.imageView.showImage(from: imageUrl)
+            }
         }
     }
 }
@@ -156,19 +139,15 @@ extension BeerListVC: UICollectionViewDelegateFlowLayout {
         
         return CGSize(width: itemWith, height: itemWith)
     }
-    
 }
 
 extension BeerListVC: BeerColorSelectCellDelegate {
     func filterContentByColor(_ color: Float) {
         
-        print("filterContentByColor \(color)")
-        
         self.beers = StorageManager.shared.getBeerInColorRange(min: color - 2, max: color + 2)
         
         self.collectionView.reloadData()
     }
-    
 }
 
 extension BeerListVC: UIGestureRecognizerDelegate {
